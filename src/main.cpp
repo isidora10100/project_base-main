@@ -15,7 +15,10 @@
 #include <learnopengl/model.h>
 
 #include <iostream>
-//opa
+
+float* initCubemapVertices(unsigned &size);
+unsigned int loadCubemapTexture();
+void setViewAndProjectionMatrixForAllShaders(vector<Shader*> &shaders);
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 
@@ -182,8 +185,28 @@ int main() {
     pointLight.linear = 0.09f;
     pointLight.quadratic = 0.032f;
 
+    unsigned sizeof_cubemapVertices;
+    float* cubemapVertices = initCubemapVertices(sizeof_cubemapVertices);
+
+    stbi_set_flip_vertically_on_load(false);
+    unsigned int cubemapVAO, cubemapVBO;
+    glGenVertexArrays(1, &cubemapVAO);
+    glGenBuffers(1, &cubemapVBO);
+    glBindVertexArray(cubemapVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, cubemapVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof_cubemapVertices, cubemapVertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) nullptr);
+    glEnableVertexAttribArray(0);
+
+    Shader cubemapShader("resources/shaders/cubemap.vs", "resources/shaders/cubemap.fs");
+    cubemapShader.setInt("cubemap", 0);
+
+    stbi_set_flip_vertically_on_load(false);
+
+    unsigned int cubemapTexture = loadCubemapTexture();
 
 
+    vector<Shader*> shaders = {&cubemapShader};
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -199,6 +222,7 @@ int main() {
         // input
         // -----
         processInput(window);
+        setViewAndProjectionMatrixForAllShaders(shaders);
 
 
         // render
@@ -226,29 +250,42 @@ int main() {
         ourShader.setMat4("view", view);
 
         // render the loaded model
+
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(0.05,0.05,0.05));    // it's a bit too big for our scene, so scale it down
+                               glm::vec3(0,-30,10)); // translate it down so it's at the center of the scene
+        model = glm::scale(model, glm::vec3(0.7,0.7,0.7));    // it's a bit too big for our scene, so scale it down
         ourShader.setMat4("model", model);
         BasketModel.Draw(ourShader);
 
         glm::mat4 model1 = glm::mat4(1.0f);
-        model1 = glm::translate(model1,glm::vec3(0,0.05,0)); // translate it down so it's at the center of the scene
-        model1 = glm::scale(model1, glm::vec3(0.07,0.07,0.07));    // it's a bit too big for our scene, so scale it down
+        model1 = glm::translate(model1,glm::vec3(0,-23,0)); // translate it down so it's at the center of the scene
+        model1 = glm::scale(model1, glm::vec3(0.7,0.7,0.7));    // it's a bit too big for our scene, so scale it down
         ourShader.setMat4("model", model1);
         BallModel.Draw(ourShader);
 
-        if (programState->ImGuiEnabled)
-            DrawImGui(programState);
+       // if (programState->ImGuiEnabled)
+            //DrawImGui(programState);
 
 
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
+        cubemapShader.use();
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);
+        glBindVertexArray(cubemapVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    delete cubemapVertices;
 
     programState->SaveToFile("resources/program_state.txt");
     delete programState;
@@ -355,4 +392,117 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     }
+};
+
+
+unsigned int loadCubemapTexture() {
+
+
+    vector<std::string> faces = {
+            FileSystem::getPath("resources/textures/my_cubemap/right.png"),
+            FileSystem::getPath("resources/textures/my_cubemap/left.png"),
+            FileSystem::getPath("resources/textures/my_cubemap/top.png"),
+            FileSystem::getPath("resources/textures/my_cubemap/down.png"),
+            FileSystem::getPath("resources/textures/my_cubemap/front.png"),
+            FileSystem::getPath("resources/textures/my_cubemap/back.png"),
+    };
+    unsigned int textureID;
+    glGenBuffers(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int widht, height, nrChannels;
+    unsigned char* data;
+
+    for(int i = 0; i < (int)faces.size(); i++){
+        data = stbi_load(faces[i].c_str(), &widht, &height, &nrChannels, 0);
+        if(data){
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, widht, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        }else{
+            cout << "failed to load cubemap texture" << endl;
+            return -1;
+        }
+        stbi_image_free(data);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
 }
+
+void setViewAndProjectionMatrixForAllShaders(vector<Shader*> &shaders){
+    glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
+                                            (float)SCR_WIDTH / (float)SCR_HEIGHT,
+                                            0.1f, 100.0f);
+    glm::mat4 view = programState->camera.GetViewMatrix();
+
+    for(Shader* shader : shaders){
+        shader->use();
+        shader->setMat4("projection", projection);
+        shader->setMat4("view", view);
+    }
+}
+
+glm::mat4 drawStand(unsigned int VAO, glm::mat4 &model, Shader shader, int indices_count){
+    shader.use();
+    shader.setMat4("model", model);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, indices_count);
+    return model;
+}
+
+float* initCubemapVertices(unsigned &size){
+    unsigned numOfVert = 36;
+    unsigned numOfCol = 3;
+
+    size = numOfVert * numOfCol * sizeof(float);
+    auto* vertices = new float[numOfVert * numOfCol]{
+            -1.0f, 1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, 1.0f, -1.0f,
+            -1.0f, 1.0f, -1.0f,
+
+            -1.0f, -1.0f, 1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, 1.0f, -1.0f,
+            -1.0f, 1.0f, -1.0f,
+            -1.0f, 1.0f, 1.0f,
+            -1.0f, -1.0f, 1.0f,
+
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+
+            -1.0f, -1.0f, 1.0f,
+            -1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f,
+            1.0f, -1.0f, 1.0f,
+            -1.0f, -1.0f, 1.0f,
+
+            -1.0f, 1.0f, -1.0f,
+            1.0f, 1.0f, -1.0f,
+            1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f,
+            -1.0f, 1.0f, 1.0f,
+            -1.0f, 1.0f, -1.0f,
+
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f, 1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f, 1.0f,
+            1.0f, -1.0f, 1.0f
+    };
+
+    return vertices;
+}
+
+
