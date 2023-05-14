@@ -177,9 +177,9 @@ int main() {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    // Blending
+    /*// Blending
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
 
 
     // build and compile shaders
@@ -188,7 +188,7 @@ int main() {
     Shader cubeShader("resources/shaders/cube.vs", "resources/shaders/cube.fs");
 
 
-    /*float cubeVertices[] = {
+    float cubeVertices[] = {
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
@@ -230,10 +230,10 @@ int main() {
             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
             -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
             -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
-    };*/
+    };
 
     // box VAO
-    /*unsigned int boxVBO, boxVAO;
+    unsigned int boxVBO, boxVAO;
     glGenVertexArrays(1, &boxVAO);
     glGenBuffers(1, &boxVBO);
 
@@ -247,16 +247,20 @@ int main() {
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
-*/
+
 
 // box texture
-   /* stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(true);
     unsigned int boxDiffuse = loadTexture(FileSystem::getPath("resources/textures/gliter.jpg").c_str(), true);
     unsigned int boxSpecular = loadTexture(FileSystem::getPath("resources/textures/gliter_specular.png").c_str(), true);
     unsigned int boxAmbient = loadTexture(FileSystem::getPath("resources/textures/gliter_ambient.png").c_str(), true);
     unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/oblak2.png").c_str(), true);
-    stbi_set_flip_vertically_on_load(false);*/
+    stbi_set_flip_vertically_on_load(false);
 
+    cubeShader.use();
+    cubeShader.setInt("material.ambient", 0);
+    cubeShader.setInt("material.diffuse", 1);
+    cubeShader.setInt("material.specular", 2);
 
     // load models
     // -----------
@@ -298,6 +302,13 @@ int main() {
 
 
     vector<Shader*> shaders = {&cubemapShader};
+
+
+    //ourShader.use();
+
+    //ourShader.setInt("material.texture_diffuse1", 0);
+   // ourShader.setInt("material.texture_specular1", 1);
+   // ourShader.setFloat("material.shininess",32.0f);
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -324,20 +335,18 @@ int main() {
         // don't forget to enable shader before setting uniforms
         ourShader.use();
         setLights(ourShader);
+       //ourShader.setFloat("material.shininess",32.0f);
 
 
-       /* cubeShader.use();
+
+        /*cubeShader.use();
         cubeShader.setInt("material.ambient", 0);
         cubeShader.setInt("material.diffuse", 1);
         cubeShader.setInt("material.specular", 2);
 */
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
-
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
         ourShader.setInt("blinn", blinn);
@@ -355,6 +364,7 @@ int main() {
         BasketModel.Draw(ourShader);
 
         glm::mat4 model1 = glm::mat4(1.0f);
+        model1 = glm::rotate(model1, (float)glfwGetTime(),glm::vec3(-1,-23,8.5));
         model1 = glm::translate(model1,glm::vec3(-2,-23,8.5)); // translate it down so it's at the center of the scene
         model1 = glm::scale(model1, glm::vec3(0.7,0.7,0.7));    // it's a bit too big for our scene, so scale it down
         ourShader.setMat4("model", model1);
@@ -363,7 +373,7 @@ int main() {
 
         // box
         // bind diffuse map
-        /*glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, boxDiffuse);
 
         // bind specular map
@@ -380,11 +390,11 @@ int main() {
         cubeShader.setMat4("view", view);
         glBindVertexArray(boxVAO);
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 3.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(0.0f, -10.0f, 0.0f));
         model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, -1.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(1.0f));
+        model = glm::scale(model, glm::vec3(8.0f));
         cubeShader.setMat4("model", model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);*/
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
        // if (programState->ImGuiEnabled)
             //DrawImGui(programState);
@@ -406,6 +416,9 @@ int main() {
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    glDeleteVertexArrays(1, &boxVAO);
+    glDeleteBuffers(1, &boxVBO);
 
     delete cubemapVertices;
 
@@ -658,7 +671,7 @@ void setLights(Shader shaderName){
     // spotLight
     shaderName.setVec3("spotLight.position", programState->camera.Position);
     shaderName.setVec3("spotLight.direction", programState->camera.Front);
-    shaderName.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+    shaderName.setVec3("spotLight.ambient", 0.5f, 0.5, 0.5f);
     if(spotLightOn){
         shaderName.setVec3("spotLight.diffuse", 10.0f, 10.0f, 10.0f);
         shaderName.setVec3("spotLight.specular", 10.0f, 10.0f, 10.0f);
