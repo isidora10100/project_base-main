@@ -14,10 +14,12 @@
 #include <learnopengl/camera.h>
 #include <learnopengl/model.h>
 
+
 #include <iostream>
 
 float* initCubemapVertices(unsigned &size);
 unsigned int loadCubemapTexture();
+void setLights(Shader shaderName);
 void setViewAndProjectionMatrixForAllShaders(vector<Shader*> &shaders);
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
@@ -44,7 +46,13 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-struct PointLight {
+bool blinn = true;
+bool spotLightOn = false;
+
+glm::vec3 lightPosition(-4.5f, 2.5f, 2.0f);
+
+
+/*struct PointLight {
     glm::vec3 position;
     glm::vec3 ambient;
     glm::vec3 diffuse;
@@ -52,8 +60,8 @@ struct PointLight {
 
     float constant;
     float linear;
-    float quadratic;
-};
+    float quadratic;*/
+
 
 struct ProgramState {
     glm::vec3 clearColor = glm::vec3(0);
@@ -63,6 +71,8 @@ struct ProgramState {
     glm::vec3 backpackPosition = glm::vec3(0.0f);
     float backpackScale = 1.0f;
     PointLight pointLight;
+    DirLight dirLight;
+    SpotLight spotLight;
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
 
@@ -175,7 +185,7 @@ int main() {
     Model BallModel("resources/objects/ball/ball.obj");
     BallModel.SetShaderTextureNamePrefix("material.");
 
-    PointLight& pointLight = programState->pointLight;
+    /*PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
     pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
     pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
@@ -183,7 +193,7 @@ int main() {
 
     pointLight.constant = 1.0f;
     pointLight.linear = 0.09f;
-    pointLight.quadratic = 0.032f;
+    pointLight.quadratic = 0.032f;*/
 
     unsigned sizeof_cubemapVertices;
     float* cubemapVertices = initCubemapVertices(sizeof_cubemapVertices);
@@ -232,22 +242,20 @@ int main() {
 
         // don't forget to enable shader before setting uniforms
         ourShader.use();
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
-        ourShader.setVec3("pointLight.position", pointLight.position);
-        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        ourShader.setVec3("pointLight.specular", pointLight.specular);
-        ourShader.setFloat("pointLight.constant", pointLight.constant);
-        ourShader.setFloat("pointLight.linear", pointLight.linear);
-        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-        ourShader.setVec3("viewPosition", programState->camera.Position);
-        ourShader.setFloat("material.shininess", 32.0f);
+        setLights(ourShader);
+
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
+
+        ourShader.setMat4("projection", projection);
+        ourShader.setMat4("view", view);
+        ourShader.setInt("blinn", blinn);
+
+
 
         // render the loaded model
 
@@ -392,6 +400,18 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     }
+    if (key == GLFW_KEY_F && action == GLFW_PRESS)
+        spotLightOn = !spotLightOn;
+
+    if (key == GLFW_KEY_B && action == GLFW_PRESS)
+        blinn = !blinn;
+
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+        cout << programState->camera.Position.x << " "
+             << programState->camera.Position.y << " "
+             << programState->camera.Position.z << '\n';
+    }
+
 };
 
 
@@ -504,5 +524,43 @@ float* initCubemapVertices(unsigned &size){
 
     return vertices;
 }
+
+void setLights(Shader shaderName){
+    shaderName.setVec3("light.position", lightPosition);
+    shaderName.setVec3("viewPos", programState->camera.Position);
+
+    // directional light
+    shaderName.setVec3("dirLight.direction", 0.0f, -1.0, 0.0f);
+    shaderName.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+    shaderName.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+    shaderName.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+    //pointlight properties
+    shaderName.setVec3("pointLights[0].position", lightPosition);
+    shaderName.setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
+    shaderName.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
+    shaderName.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
+    shaderName.setFloat("pointLights[0].constant", 1.0f);
+    shaderName.setFloat("pointLights[0].linear", 0.09f);
+    shaderName.setFloat("pointLights[0].quadratic", 0.032f);
+    // spotLight
+    shaderName.setVec3("spotLight.position", programState->camera.Position);
+    shaderName.setVec3("spotLight.direction", programState->camera.Front);
+    shaderName.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+    if(spotLightOn){
+        shaderName.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+        shaderName.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+    }
+    else{
+        shaderName.setVec3("spotLight.diffuse", 0.0f, 0.0f, 0.0f);
+        shaderName.setVec3("spotLight.specular", 0.0f, 0.0f, 0.0f);
+    }
+
+    shaderName.setFloat("spotLight.constant", 1.0f);
+    shaderName.setFloat("spotLight.linear", 0.09f);
+    shaderName.setFloat("spotLight.quadratic", 0.032f);
+    shaderName.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+    shaderName.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+}
+
 
 
