@@ -177,15 +177,17 @@ int main() {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    /*// Blending
+    // Blending
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
     // build and compile shaders
     // -------------------------
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
     Shader cubeShader("resources/shaders/cube.vs", "resources/shaders/cube.fs");
+    Shader clShader("resources/shaders/clds.vs", "resources/shaders/clds.fs");
+
 
 
     float cubeVertices[] = {
@@ -232,6 +234,16 @@ int main() {
             -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
     };
 
+    float transparentVertices[] = {
+            // positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
+            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+            0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+            1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+    };
+
     // box VAO
     unsigned int boxVBO, boxVAO;
     glGenVertexArrays(1, &boxVAO);
@@ -248,19 +260,52 @@ int main() {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
+    //transparent VAO
+    unsigned int transparentVAO, transparentVBO;
+    glGenVertexArrays(1, &transparentVAO);
+    glGenBuffers(1, &transparentVBO);
+    glBindVertexArray(transparentVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
+
+    vector<glm::vec3> clouds
+            {
+                    glm::vec3(-6.5f, 2.0f, -0.48f),
+                    glm::vec3( 3.5f, 4.0f, 1.51f),
+                    glm::vec3( 2.0f, 1.5f, 0.7f),
+                    glm::vec3(-4.3f, 3.5f, -2.3f),
+                    glm::vec3( 6.0f, 4.5f, -1.6f),
+                    glm::vec3( 0.0f, 4.0f, -1.6f)
+            };
+
+
+
 
 // box texture
-    stbi_set_flip_vertically_on_load(true);
+    /*stbi_set_flip_vertically_on_load(true);
     unsigned int boxDiffuse = loadTexture(FileSystem::getPath("resources/textures/gliter.jpg").c_str(), true);
     unsigned int boxSpecular = loadTexture(FileSystem::getPath("resources/textures/gliter_specular.png").c_str(), true);
     unsigned int boxAmbient = loadTexture(FileSystem::getPath("resources/textures/gliter_ambient.png").c_str(), true);
     unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/oblak2.png").c_str(), true);
-    stbi_set_flip_vertically_on_load(false);
+    stbi_set_flip_vertically_on_load(false);*/
+
+    unsigned int boxTexture = loadTexture(FileSystem::getPath("resources/textures/container.jpg").c_str(), true);
 
     cubeShader.use();
-    cubeShader.setInt("material.ambient", 0);
+    cubeShader.setInt("texture1", 0);
+    /*cubeShader.setInt("material.ambient", 0);
     cubeShader.setInt("material.diffuse", 1);
-    cubeShader.setInt("material.specular", 2);
+    cubeShader.setInt("material.specular", 2);*/
+
+    unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/cloud.png").c_str(), true);
+    stbi_set_flip_vertically_on_load(true);
+    clShader.use();
+    clShader.setInt("texture1", 0);
 
     // load models
     // -----------
@@ -363,6 +408,8 @@ int main() {
         ourShader.setMat4("model", model);
         BasketModel.Draw(ourShader);
 
+        glDisable(GL_CULL_FACE);
+
         glm::mat4 model1 = glm::mat4(1.0f);
         model1 = glm::rotate(model1, (float)glfwGetTime(),glm::vec3(-1,-23,8.5));
         model1 = glm::translate(model1,glm::vec3(-2,-23,8.5)); // translate it down so it's at the center of the scene
@@ -370,33 +417,48 @@ int main() {
         ourShader.setMat4("model", model1);
         BallModel.Draw(ourShader);
 
+        //glDisable(GL_CULL_FACE);
+
 
         // box
-        // bind diffuse map
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, boxDiffuse);
-
-        // bind specular map
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, boxSpecular);
-
-        // bind emission map
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, boxAmbient);
         cubeShader.use();
         setLights(cubeShader);
         cubeShader.setFloat("material.shininess", 64.0f);
         cubeShader.setMat4("projection", projection);
         cubeShader.setMat4("view", view);
+
         glBindVertexArray(boxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, boxTexture);
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, -10.0f, 0.0f));
-        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, -1.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(8.0f));
+        model = glm::rotate(model, (float)glfwGetTime(),glm::vec3(-2.0f,-10.0f,10.0f));
+        model = glm::translate(model, glm::vec3(-2.0f, -10.0f, 10.0f));
+        model = glm::scale(model, glm::vec3(5.0f));
         cubeShader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
-       // if (programState->ImGuiEnabled)
+
+
+        //clouds (blending)
+        clShader.use();
+        clShader.setMat4("projection",projection);
+        clShader.setMat4("view",view);
+        glBindVertexArray(transparentVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, transparentTexture);
+        for (const glm::vec3& c : clouds)
+        {
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, c);
+            //model = glm::rotate(model, (float)glfwGetTime(),glm::vec3(0.0f,1.0f,0.0f));
+            model = glm::scale(model,glm::vec3(1.5f));
+            clShader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+        glEnable(GL_CULL_FACE);
+
+
+        // if (programState->ImGuiEnabled)
             //DrawImGui(programState);
 
 
