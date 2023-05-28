@@ -50,6 +50,7 @@ bool blinn = true;
 bool spotLightOn = false;
 
 glm::vec3 lightPosition(-4.5f, 2.5f, 2.0f);
+void calculateLightColor(unsigned int i, glm::vec3 *lightColor);
 
 
 /*struct PointLight {
@@ -275,13 +276,14 @@ int main() {
 
     vector<glm::vec3> clouds
             {
-                    glm::vec3(-6.5f, 2.0f, -0.48f),
-                    glm::vec3( 3.5f, 4.0f, 1.51f),
-                    glm::vec3( 2.0f, 1.5f, 0.7f),
-                    glm::vec3(-4.3f, 3.5f, -2.3f),
-                    glm::vec3( 6.0f, 4.5f, -1.6f),
-                    glm::vec3( 0.0f, 4.0f, -1.6f)
+                    glm::vec3(-50.0f, 2.0f, -0.48f),
+                    glm::vec3( -3.0f, 4.0f, 1.51f),
+                    glm::vec3( 10.0f, 1.5f, 0.7f),
+                    glm::vec3(50.0f, 3.5f, -2.3f),
+                    glm::vec3( -20.0f, 4.5f, -1.6f),
+                    glm::vec3( 5.0f, 4.0f, -1.6f)
             };
+    stbi_set_flip_vertically_on_load(false);
 
 
 
@@ -293,15 +295,19 @@ int main() {
     unsigned int boxAmbient = loadTexture(FileSystem::getPath("resources/textures/gliter_ambient.png").c_str(), true);
     unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/oblak2.png").c_str(), true);
     stbi_set_flip_vertically_on_load(false);*/
+    stbi_set_flip_vertically_on_load(false);
 
-    unsigned int boxTexture = loadTexture(FileSystem::getPath("resources/textures/container.jpg").c_str(), true);
 
+    unsigned int boxTexture = loadTexture(FileSystem::getPath("resources/textures/images.jpeg").c_str(), true);
+
+    stbi_set_flip_vertically_on_load(true);
     cubeShader.use();
     cubeShader.setInt("texture1", 0);
     /*cubeShader.setInt("material.ambient", 0);
     cubeShader.setInt("material.diffuse", 1);
     cubeShader.setInt("material.specular", 2);*/
 
+    stbi_set_flip_vertically_on_load(false);
     unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/cloud.png").c_str(), true);
     stbi_set_flip_vertically_on_load(true);
     clShader.use();
@@ -359,6 +365,8 @@ int main() {
 
     // render loop
     // -----------
+    glm::vec3 lightColor;
+
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
         // --------------------
@@ -431,11 +439,14 @@ int main() {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, boxTexture);
         model = glm::mat4(1.0f);
-        model = glm::rotate(model, (float)glfwGetTime(),glm::vec3(-2.0f,-10.0f,10.0f));
+       // model = glm::rotate(model, (float)glfwGetTime(),glm::vec3(-2.0f,-10.0f,10.0f));
         model = glm::translate(model, glm::vec3(-2.0f, -10.0f, 10.0f));
         model = glm::scale(model, glm::vec3(5.0f));
         cubeShader.setMat4("model", model);
+        cubeShader.setVec3("lightColor", lightColor);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        glDisable(GL_CULL_FACE);
 
 
 
@@ -451,15 +462,15 @@ int main() {
             model = glm::mat4(1.0f);
             model = glm::translate(model, c);
             //model = glm::rotate(model, (float)glfwGetTime(),glm::vec3(0.0f,1.0f,0.0f));
-            model = glm::scale(model,glm::vec3(1.5f));
+            model = glm::scale(model,glm::vec3(10.0f));
             clShader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
         glEnable(GL_CULL_FACE);
 
 
-        // if (programState->ImGuiEnabled)
-            //DrawImGui(programState);
+       // if (programState->ImGuiEnabled)
+          //  DrawImGui(programState);
 
 
 
@@ -795,6 +806,16 @@ unsigned int loadTexture(char const * path, bool gammaCorrection)
     }
 
     return textureID;
+}
+
+void calculateLightColor(unsigned int i, glm::vec3 *lightColor)
+{
+    if(i == 0) {
+        lightColor->r = (float) sin(glfwGetTime() * 3.8);
+        lightColor->g = (float) sin(glfwGetTime() * 4.6);
+        lightColor->b = (float) sin(glfwGetTime() * 5.1);
+    }
+
 }
 
 
