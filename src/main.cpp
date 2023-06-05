@@ -85,12 +85,13 @@ struct ProgramState {
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
 
-    void SaveToFile(std::string filename);
+    void SaveToFile(const std::string& filename) const;
 
-    void LoadFromFile(std::string filename);
+    void LoadFromFile(const std::string& filename);
 };
 
-void ProgramState::SaveToFile(std::string filename) {
+void ProgramState::SaveToFile(const std::string&
+filename) const {
     std::ofstream out(filename);
     out << clearColor.r << '\n'
         << clearColor.g << '\n'
@@ -104,7 +105,7 @@ void ProgramState::SaveToFile(std::string filename) {
         << camera.Front.z << '\n';
 }
 
-void ProgramState::LoadFromFile(std::string filename) {
+void ProgramState::LoadFromFile(const std::string& filename) {
     std::ifstream in(filename);
     if (in) {
         in >> clearColor.r
@@ -183,8 +184,8 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     // Face culling
-   // glEnable(GL_CULL_FACE);
-   // glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
     // Blending
     glEnable(GL_BLEND);
@@ -451,8 +452,8 @@ int main() {
     Model BasketModel("resources/objects/basket/Basket.obj");
     BasketModel.SetShaderTextureNamePrefix("material.");
 
-    Model BallModel("resources/objects/plane/ITFKVZUC09SUAH59BWB1PENPK.obj");
-    BallModel.SetShaderTextureNamePrefix("material.");
+    Model PlaneModel("resources/objects/plane/ITFKVZUC09SUAH59BWB1PENPK.obj");
+    PlaneModel.SetShaderTextureNamePrefix("material.");
 
     /*PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
@@ -567,7 +568,7 @@ int main() {
         model1 = glm::translate(model1,glm::vec3(-2,-1,8.5)); // translate it down so it's at the center of the scene
         model1 = glm::scale(model1, glm::vec3(4,4,4));    // it's a bit too big for our scene, so scale it down
         ourShader.setMat4("model", model1);
-        BallModel.Draw(ourShader);
+        PlaneModel.Draw(ourShader);
 
        // glDisable(GL_CULL_FACE);
 
@@ -701,6 +702,9 @@ int main() {
 
     glDeleteVertexArrays(1, &boxVAO);
     glDeleteBuffers(1, &boxVBO);
+
+    glDeleteVertexArrays(1, &transparentVAO);
+    glDeleteBuffers(1, &transparentVBO);
 
     delete cubemapVertices;
 
