@@ -18,9 +18,11 @@
 #include <iostream>
 
 float* initCubemapVertices(unsigned &size);
-unsigned int loadCubemapTexture();
+
+__attribute__((unused)) unsigned int loadCubemapTexture();
 void setLights(Shader shaderName);
-void setViewAndProjectionMatrixForAllShaders(vector<Shader*> &shaders);
+
+__attribute__((unused)) void setViewAndProjectionMatrixForAllShaders(vector<Shader*> &shaders);
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 
@@ -34,6 +36,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 unsigned int loadTexture(char const * path, bool gammaCorrection);
 void renderQuad();
 unsigned int loadCubemap(vector<std::string> faces);
+
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -56,7 +59,6 @@ bool bloom = false;
 float exposure = 1.0f;
 
 glm::vec3 lightPosition(-4.5f, 2.5f, 2.0f);
-void calculateLightColor(unsigned int i, glm::vec3 *lightColor);
 
 
 /*struct PointLight {
@@ -77,9 +79,9 @@ struct ProgramState {
     bool CameraMouseMovementUpdateEnabled = true;
     glm::vec3 backpackPosition = glm::vec3(0.0f);
     float backpackScale = 1.0f;
-    PointLight pointLight;
-    DirLight dirLight;
-    SpotLight spotLight;
+    PointLight pointLight{};
+    DirLight dirLight{};
+    SpotLight spotLight{};
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
 
@@ -136,8 +138,8 @@ int main() {
 
     // glfw window creation
     // --------------------
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL) {
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", nullptr, nullptr);
+    if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
@@ -198,7 +200,7 @@ int main() {
     Shader bloomShader("resources/shaders/blur.vs", "resources/shaders/blur.fs");
     Shader skyboxShader("resources/shaders/cubemap.vs", "resources/shaders/cubemap.fs");
     Shader BallShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
-
+    Shader lightShader("resources/shaders/lightCube.vs", "resources/shaders/lightCube.fs");
     float skyboxVertices[] = {
             // positions
             -1.0f,  1.0f, -1.0f,
@@ -308,7 +310,7 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
 
     glBindVertexArray(boxVAO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)nullptr);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
@@ -323,7 +325,7 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)nullptr);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
@@ -370,8 +372,8 @@ int main() {
     skyboxShader.setInt("skybox", 0);
     stbi_set_flip_vertically_on_load(false);
 
-    cubeShader.use();
-    cubeShader.setInt("texture1", 0);
+    //lightShader.use();
+    //lightShader.setInt("texture1", 0);
     /*cubeShader.setInt("material.ambient", 0);
     cubeShader.setInt("material.diffuse", 1);
     cubeShader.setInt("material.specular", 2);*/
@@ -400,7 +402,7 @@ int main() {
     for (unsigned int i = 0; i < 2; i++)
     {
         glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -432,7 +434,7 @@ int main() {
     {
         glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
         glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
@@ -497,7 +499,7 @@ int main() {
 
     // render loop
     // -----------
-    glm::vec3 lightColor;
+
 
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
@@ -571,24 +573,30 @@ int main() {
 
 
         // box
-        cubeShader.use();
-        setLights(cubeShader);
-        cubeShader.setFloat("material.shininess", 64.0f);
-        cubeShader.setMat4("projection", projection);
-        cubeShader.setMat4("view", view);
+        glEnable(GL_CULL_FACE);
+        lightShader.use();
+        setLights(cubeShader); //?
+        //cubeShader.setFloat("material.shininess", 64.0f);
+        lightShader.setMat4("projection", projection);
+        lightShader.setMat4("view", view);
 
         glBindVertexArray(boxVAO);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, boxTexture);
+        //glActiveTexture(GL_TEXTURE0);
+        //glBindTexture(GL_TEXTURE_2D, boxTexture);
+        glm::vec3 ColorLight = glm::vec3((float) sin(glfwGetTime() * 5.0),(float) sin(glfwGetTime() * 3.8),(float) sin(glfwGetTime() * 4.6));
+
+
         model = glm::mat4(1.0f);
-        model = glm::rotate(model, (float)glfwGetTime(),glm::vec3(-2.0f,-10.0f,10.0f));
+        //model = glm::rotate(model, (float)glfwGetTime(),glm::vec3(-2.0f,-10.0f,10.0f));
         model = glm::translate(model, glm::vec3(-2.0f, -10.0f, 10.0f));
         model = glm::scale(model, glm::vec3(5.0f));
-        cubeShader.setMat4("model", model);
-        cubeShader.setVec3("lightColor", lightColor);
-       glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        //glDisable(GL_CULL_FACE);
+        lightShader.setMat4("model", model);
+        lightShader.setVec3("lightColor", ColorLight);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        glDisable(GL_CULL_FACE);
+        glBindVertexArray(0);
 
 
 
@@ -667,8 +675,8 @@ int main() {
 
 
 
-       // if (programState->ImGuiEnabled)
-          //  DrawImGui(programState);
+        if (programState->ImGuiEnabled)
+            DrawImGui(programState);
 
 
 
@@ -836,10 +844,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         exposure += 0.1f;
     }
 
-};
+}
 
 
-unsigned int loadCubemapTexture() {
+__attribute__((unused)) unsigned int loadCubemapTexture() {
 
 
     vector<std::string> faces = {
@@ -876,7 +884,7 @@ unsigned int loadCubemapTexture() {
     return textureID;
 }
 
-void setViewAndProjectionMatrixForAllShaders(vector<Shader*> &shaders){
+__attribute__((unused)) void setViewAndProjectionMatrixForAllShaders(vector<Shader*> &shaders){
     glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                             (float)SCR_WIDTH / (float)SCR_HEIGHT,
                                             0.1f, 100.0f);
@@ -889,7 +897,7 @@ void setViewAndProjectionMatrixForAllShaders(vector<Shader*> &shaders){
     }
 }
 
-glm::mat4 drawStand(unsigned int VAO, glm::mat4 &model, Shader shader, int indices_count){
+__attribute__((unused)) glm::mat4 drawStand(unsigned int VAO, glm::mat4 &model, Shader shader, int indices_count){
     shader.use();
     shader.setMat4("model", model);
     glBindVertexArray(VAO);
@@ -996,8 +1004,8 @@ unsigned int loadTexture(char const * path, bool gammaCorrection)
     unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
     if (data)
     {
-        GLenum internalFormat;
-        GLenum dataFormat;
+        GLenum internalFormat = 0;
+        GLenum dataFormat = 0;
         if (nrComponents == 1)
         {
             internalFormat = dataFormat = GL_RED;
@@ -1033,15 +1041,7 @@ unsigned int loadTexture(char const * path, bool gammaCorrection)
     return textureID;
 }
 
-void calculateLightColor(unsigned int i, glm::vec3 *lightColor)
-{
-    if(i == 0) {
-        lightColor->r = (float) sin(glfwGetTime() * 3.8);
-        lightColor->g = (float) sin(glfwGetTime() * 4.6);
-        lightColor->b = (float) sin(glfwGetTime() * 5.1);
-    }
 
-}
 
 unsigned int quadVAO = 0;
 unsigned int quadVBO;
@@ -1064,7 +1064,7 @@ void renderQuad()
         glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)nullptr);
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     }
