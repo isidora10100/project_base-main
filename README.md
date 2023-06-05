@@ -34,10 +34,10 @@
 * Oblast B: `HDR,Bloom`
 
 ## Modeli
-* [model1](link)
-* [model2](link)
-* [model3](link)
-* [clouds.png](link)
+* [Kosarkaski teren](https://www.cgtrader.com/free-3d-models/sports/game/simple-basketball-court)
+* [Avion](https://rigmodels.com/model.php?view=Airbus_Plane-3d-model__ITFKVZUC09SUAH59BWB1PENPK&searchkeyword=plane%20.obj%20free&manualsearch=1)
+* [skybox preuzela od kolege](preuzela od kolege)
+* [clouds.png](https://pngtree.com/free-cloud-png)
 
 ## Demo projekta
 [video snimak projekta](link)
