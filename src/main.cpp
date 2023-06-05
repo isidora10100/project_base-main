@@ -181,8 +181,8 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     // Face culling
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+   // glEnable(GL_CULL_FACE);
+   // glCullFace(GL_BACK);
 
     // Blending
     glEnable(GL_BLEND);
@@ -197,6 +197,7 @@ int main() {
     Shader hdrShader("resources/shaders/hdr.vs", "resources/shaders/hdr.fs");
     Shader bloomShader("resources/shaders/blur.vs", "resources/shaders/blur.fs");
     Shader skyboxShader("resources/shaders/cubemap.vs", "resources/shaders/cubemap.fs");
+    Shader BallShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
 
     float skyboxVertices[] = {
             // positions
@@ -356,8 +357,8 @@ int main() {
 
     vector<std::string> faces
             {
-                    FileSystem::getPath("resources/textures/my_cubemap/right.png"),
                     FileSystem::getPath("resources/textures/my_cubemap/left.png"),
+                    FileSystem::getPath("resources/textures/my_cubemap/right.png"),
                     FileSystem::getPath("resources/textures/my_cubemap/top.png"),
                     FileSystem::getPath("resources/textures/my_cubemap/down.png"),
                     FileSystem::getPath("resources/textures/my_cubemap/front.png"),
@@ -448,8 +449,8 @@ int main() {
     Model BasketModel("resources/objects/basket/Basket.obj");
     BasketModel.SetShaderTextureNamePrefix("material.");
 
-    //Model BallModel("resources/objects/ball/ball.obj");
-  // BallModel.SetShaderTextureNamePrefix("material.");
+    Model BallModel("resources/objects/plane/ITFKVZUC09SUAH59BWB1PENPK.obj");
+    BallModel.SetShaderTextureNamePrefix("material.");
 
     /*PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
@@ -546,22 +547,27 @@ int main() {
         // render the loaded model
 
         glm::mat4 model = glm::mat4(1.0f);
+
         model = glm::translate(model,
                                glm::vec3(0,-30,10)); // translate it down so it's at the center of the scene
         model = glm::scale(model, glm::vec3(0.7,0.7,0.7));    // it's a bit too big for our scene, so scale it down
         ourShader.setMat4("model", model);
         BasketModel.Draw(ourShader);
 
-        glDisable(GL_CULL_FACE);
-
-        //glm::mat4 model1 = glm::mat4(1.0f);
-        //model1 = glm::rotate(model1, glm::vec3(-1,-23,8.5));
-        //model1 = glm::translate(model1,glm::vec3(-2,-29,8.5)); // translate it down so it's at the center of the scene
-        //model1 = glm::scale(model1, glm::vec3(0.7,0.7,0.7));    // it's a bit too big for our scene, so scale it down
-       // ourShader.setMat4("model", model1);
-       // BallModel.Draw(ourShader);
-
         //glDisable(GL_CULL_FACE);
+
+        //glEnable(GL_CULL_FACE);
+
+
+
+        glm::mat4 model1 = glm::mat4(1.0f);
+        model1 = glm::rotate(model1, (float)glfwGetTime()/2, glm::vec3(-1,1,1));
+        model1 = glm::translate(model1,glm::vec3(-2,-1,8.5)); // translate it down so it's at the center of the scene
+        model1 = glm::scale(model1, glm::vec3(4,4,4));    // it's a bit too big for our scene, so scale it down
+        ourShader.setMat4("model", model1);
+        BallModel.Draw(ourShader);
+
+       // glDisable(GL_CULL_FACE);
 
 
         // box
@@ -575,14 +581,14 @@ int main() {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, boxTexture);
         model = glm::mat4(1.0f);
-       // model = glm::rotate(model, (float)glfwGetTime(),glm::vec3(-2.0f,-10.0f,10.0f));
+        model = glm::rotate(model, (float)glfwGetTime(),glm::vec3(-2.0f,-10.0f,10.0f));
         model = glm::translate(model, glm::vec3(-2.0f, -10.0f, 10.0f));
         model = glm::scale(model, glm::vec3(5.0f));
         cubeShader.setMat4("model", model);
         cubeShader.setVec3("lightColor", lightColor);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+       glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        glDisable(GL_CULL_FACE);
+        //glDisable(GL_CULL_FACE);
 
 
 
@@ -593,6 +599,7 @@ int main() {
         glBindVertexArray(transparentVAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, transparentTexture);
+        //glEnable(GL_CULL_FACE);
         for (const glm::vec3& c : clouds)
         {
             model = glm::mat4(1.0f);
@@ -603,7 +610,7 @@ int main() {
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
-        glEnable(GL_CULL_FACE);
+       // glEnable(GL_CULL_FACE);
 
         stbi_set_flip_vertically_on_load(false);
         // draw skybox as last
