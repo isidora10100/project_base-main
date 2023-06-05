@@ -12,16 +12,24 @@
 
 ## Komande
 `W,S,A,D` - kretanje po sceni
+
 `ESC` - zatvaranje prozora
+
+
 `H`  - ukljucivanje/isklucivanje HDR-a
+
 `L` - Bloom
+
 `F` - spotlight
+
 `Q/E` - uklicivanje/iskljucivanje exposure-a
+
 `B` - blinn
 
   
 ## Obradjene teme
 * implementirane sve iz prvih 8 nedelja
+* `Blending`, `Face culling`, `Advanced lighting`
 * Oblast A: `Cubemaps`
 * Oblast B: `HDR,Bloom`
 
