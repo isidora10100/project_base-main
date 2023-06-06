@@ -560,7 +560,8 @@ int main() {
         lightShader.setMat4("view", view);
 
         glBindVertexArray(boxVAO);
-        glm::vec3 ColorLight = glm::vec3((float) sin(glfwGetTime() * 5.0),(float) sin(glfwGetTime() * 3.8),(float) sin(glfwGetTime() * 4.6));
+//        glm::vec3 ColorLight = glm::vec3((float) sin(glfwGetTime() * 5.0),(float) sin(glfwGetTime() * 3.8),(float) sin(glfwGetTime() * 4.6));
+        glm::vec3 ColorLight = glm::vec3(5.0f, 5.0f, 5.0f);
 
 
         model = glm::mat4(1.0f);
@@ -585,6 +586,7 @@ int main() {
         glActiveTexture(GL_TEXTURE0);//???
         glBindTexture(GL_TEXTURE_2D, transparentTexture);
        // glDisable(GL_CULL_FACE);
+
         for (const glm::vec3& c : clouds)
         {
             model = glm::mat4(1.0f);
