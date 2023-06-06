@@ -1,5 +1,5 @@
 # Virtuelna kosarka
---o projektu--
+--kosarkasi teren u pustinji iznad koga se nalazi svetleca kocka koja signalizira avionu da se ispod nalazi teren--
 
 ## Uputstvo
 1. `git clone https://github.com/isidora10100/project_base-main`
@@ -40,7 +40,7 @@
 * [clouds.png](https://pngtree.com/free-cloud-png)
 
 ## Demo projekta
-[video snimak projekta](link)
+[video snimak projekta](https://youtu.be/iXyFJNCClnc)
 
 # Autor
 Isidora Dukic 146/2020
