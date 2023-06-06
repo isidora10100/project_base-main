@@ -182,10 +182,9 @@ int main() {
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
-
     // Face culling
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+   // glEnable(GL_CULL_FACE);
+   //glCullFace(GL_BACK);
 
     // Blending
     glEnable(GL_BLEND);
@@ -202,6 +201,9 @@ int main() {
     Shader skyboxShader("resources/shaders/cubemap.vs", "resources/shaders/cubemap.fs");
     Shader BallShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
     Shader lightShader("resources/shaders/lightCube.vs", "resources/shaders/lightCube.fs");
+
+
+
     float skyboxVertices[] = {
             // positions
             -1.0f,  1.0f, -1.0f,
@@ -248,6 +250,70 @@ int main() {
     };
 
 
+    //skybox VAO, VBO, and loading texture
+    stbi_set_flip_vertically_on_load(true);
+    unsigned int skyboxVAO, skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) nullptr);
+
+    vector<std::string> faces
+            {
+                    FileSystem::getPath("resources/textures/my_cubemap/left.png"),
+                    FileSystem::getPath("resources/textures/my_cubemap/right.png"),
+                    FileSystem::getPath("resources/textures/my_cubemap/top.png"),
+                    FileSystem::getPath("resources/textures/my_cubemap/down.png"),
+                    FileSystem::getPath("resources/textures/my_cubemap/front.png"),
+                    FileSystem::getPath("resources/textures/my_cubemap/back.png")
+            };
+    unsigned int cubemapTexture = loadCubemap(faces);
+
+    //square for the clouds
+
+    float transparentVertices[] = {
+            // positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
+            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+            0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+            1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+    };
+
+    //VAO I VBO for clouds
+    unsigned int transparentVAO, transparentVBO;
+    glGenVertexArrays(1, &transparentVAO);
+    glGenBuffers(1, &transparentVBO);
+    glBindVertexArray(transparentVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)nullptr);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
+
+    stbi_set_flip_vertically_on_load(false);
+    unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/cloud.png").c_str(), true);
+
+
+    //clouds position
+    vector<glm::vec3> clouds
+            {
+                    glm::vec3(-50.0f, 2.0f, -0.48f),
+                    glm::vec3( -3.0f, 4.0f, 1.51f),
+                    glm::vec3( 10.0f, 1.5f, 0.7f),
+                    glm::vec3(50.0f, 3.5f, -2.3f),
+                    glm::vec3( -20.0f, 4.5f, -1.6f),
+                    glm::vec3( 5.0f, 4.0f, -1.6f)
+            };
+
+    //box
+
     float cubeVertices[] = {
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
@@ -292,16 +358,6 @@ int main() {
             -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
     };
 
-    float transparentVertices[] = {
-            // positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
-            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
-            0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
-            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
-            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
-            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
-            1.0f,  0.5f,  0.0f,  1.0f,  0.0f
-    };
-
     // box VAO
     unsigned int boxVBO, boxVAO;
     glGenVertexArrays(1, &boxVAO);
@@ -318,81 +374,10 @@ int main() {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
-    //transparent VAO
-    unsigned int transparentVAO, transparentVBO;
-    glGenVertexArrays(1, &transparentVAO);
-    glGenBuffers(1, &transparentVBO);
-    glBindVertexArray(transparentVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)nullptr);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glBindVertexArray(0);
 
-    vector<glm::vec3> clouds
-            {
-                    glm::vec3(-50.0f, 2.0f, -0.48f),
-                    glm::vec3( -3.0f, 4.0f, 1.51f),
-                    glm::vec3( 10.0f, 1.5f, 0.7f),
-                    glm::vec3(50.0f, 3.5f, -2.3f),
-                    glm::vec3( -20.0f, 4.5f, -1.6f),
-                    glm::vec3( 5.0f, 4.0f, -1.6f)
-            };
-    stbi_set_flip_vertically_on_load(false);
+    stbi_set_flip_vertically_on_load(false);//?
 
-
-
-
-// box texture
-    /*stbi_set_flip_vertically_on_load(true);
-    unsigned int boxDiffuse = loadTexture(FileSystem::getPath("resources/textures/gliter.jpg").c_str(), true);
-    unsigned int boxSpecular = loadTexture(FileSystem::getPath("resources/textures/gliter_specular.png").c_str(), true);
-    unsigned int boxAmbient = loadTexture(FileSystem::getPath("resources/textures/gliter_ambient.png").c_str(), true);
-    unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/oblak2.png").c_str(), true);
-    stbi_set_flip_vertically_on_load(false);*/
-    stbi_set_flip_vertically_on_load(false);
-
-
-    unsigned int boxTexture = loadTexture(FileSystem::getPath("resources/textures/images.jpeg").c_str(), true);
-    stbi_set_flip_vertically_on_load(true);
-
-    vector<std::string> faces
-            {
-                    FileSystem::getPath("resources/textures/my_cubemap/left.png"),
-                    FileSystem::getPath("resources/textures/my_cubemap/right.png"),
-                    FileSystem::getPath("resources/textures/my_cubemap/top.png"),
-                    FileSystem::getPath("resources/textures/my_cubemap/down.png"),
-                    FileSystem::getPath("resources/textures/my_cubemap/front.png"),
-                    FileSystem::getPath("resources/textures/my_cubemap/back.png")
-            };
-    unsigned int cubemapTexture = loadCubemap(faces);
-
-    skyboxShader.use();
-    skyboxShader.setInt("skybox", 0);
-    stbi_set_flip_vertically_on_load(false);
-
-    //lightShader.use();
-    //lightShader.setInt("texture1", 0);
-    /*cubeShader.setInt("material.ambient", 0);
-    cubeShader.setInt("material.diffuse", 1);
-    cubeShader.setInt("material.specular", 2);*/
-
-    stbi_set_flip_vertically_on_load(false);
-    unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/cloud.png").c_str(), true);
-
-    stbi_set_flip_vertically_on_load(true);
-    clShader.use();
-    clShader.setInt("texture1", 0);
-
-    bloomShader.use();
-    bloomShader.setInt("image", 0);
-
-    hdrShader.use();
-    hdrShader.setInt("hdrBuffer", 0);
-    hdrShader.setInt("bloomBlur", 1);
-
+    //def sa radom sa bloor i hdr
     //hdr
     unsigned int hdrFBO;
     glGenFramebuffers(1, &hdrFBO);
@@ -426,6 +411,7 @@ int main() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
+
     // ping-pong-framebuffer for blurring
     unsigned int pingpongFBO[2];
     unsigned int pingpongColorbuffers[2];
@@ -445,13 +431,12 @@ int main() {
             std::cout << "Framebuffer not complete!" << std::endl;
     }
 
-
-
     // load models
     // -----------
     Model BasketModel("resources/objects/basket/Basket.obj");
     BasketModel.SetShaderTextureNamePrefix("material.");
 
+    stbi_set_flip_vertically_on_load(false);
     Model PlaneModel("resources/objects/plane/ITFKVZUC09SUAH59BWB1PENPK.obj");
     PlaneModel.SetShaderTextureNamePrefix("material.");
 
@@ -468,35 +453,33 @@ int main() {
     unsigned sizeof_cubemapVertices;
     float* cubemapVertices = initCubemapVertices(sizeof_cubemapVertices);
 
-    stbi_set_flip_vertically_on_load(true);
-    unsigned int skyboxVAO, skyboxVBO;
-    glGenVertexArrays(1, &skyboxVAO);
-    glGenBuffers(1, &skyboxVBO);
-    glBindVertexArray(skyboxVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) nullptr);
+  //shader activation
 
 
-    //Shader cubemapShader("resources/shaders/cubemap.vs", "resources/shaders/cubemap.fs");
-    //cubemapShader.setInt("cubemap", 0);
-
+    skyboxShader.use();
+    skyboxShader.setInt("skybox", 0);
     stbi_set_flip_vertically_on_load(false);
 
+    stbi_set_flip_vertically_on_load(true);
+    clShader.use();
+    clShader.setInt("texture1", 0);
 
 
 
-   // vector<Shader*> shaders = {&cubemapShader};
+    bloomShader.use();
+    bloomShader.setInt("image", 0);
+
+    hdrShader.use();
+    hdrShader.setInt("hdrBuffer", 0);
+    hdrShader.setInt("bloomBlur", 1);
 
 
-    //ourShader.use();
 
-    //ourShader.setInt("material.texture_diffuse1", 0);
-   // ourShader.setInt("material.texture_specular1", 1);
-   // ourShader.setFloat("material.shininess",32.0f);
-    // draw in wireframe
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+
+
+    stbi_set_flip_vertically_on_load(false);//?
+
 
     // render loop
     // -----------
@@ -520,29 +503,30 @@ int main() {
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        ourShader.use();
+
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
 
         // don't forget to enable shader before setting uniforms
-        ourShader.use();
         setLights(ourShader);
        //ourShader.setFloat("material.shininess",32.0f);
 
 
 
-        /*cubeShader.use();
-        cubeShader.setInt("material.ambient", 0);
-        cubeShader.setInt("material.diffuse", 1);
-        cubeShader.setInt("material.specular", 2);
-*/
+
+
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
         ourShader.setInt("blinn", blinn);
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
 
 
 
@@ -557,10 +541,6 @@ int main() {
         ourShader.setMat4("model", model);
         BasketModel.Draw(ourShader);
 
-        //glDisable(GL_CULL_FACE);
-
-        //glEnable(GL_CULL_FACE);
-
 
 
         glm::mat4 model1 = glm::mat4(1.0f);
@@ -570,20 +550,16 @@ int main() {
         ourShader.setMat4("model", model1);
         PlaneModel.Draw(ourShader);
 
-       // glDisable(GL_CULL_FACE);
-
 
         // box
-        glEnable(GL_CULL_FACE);
+        //glEnable(GL_CULL_FACE);
         lightShader.use();
-        setLights(cubeShader); //?
+        setLights(lightShader); //?
         //cubeShader.setFloat("material.shininess", 64.0f);
         lightShader.setMat4("projection", projection);
         lightShader.setMat4("view", view);
 
         glBindVertexArray(boxVAO);
-        //glActiveTexture(GL_TEXTURE0);
-        //glBindTexture(GL_TEXTURE_2D, boxTexture);
         glm::vec3 ColorLight = glm::vec3((float) sin(glfwGetTime() * 5.0),(float) sin(glfwGetTime() * 3.8),(float) sin(glfwGetTime() * 4.6));
 
 
@@ -596,7 +572,7 @@ int main() {
         lightShader.setVec3("lightColor", ColorLight);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        glDisable(GL_CULL_FACE);
+        //glDisable(GL_CULL_FACE);
         glBindVertexArray(0);
 
 
@@ -606,22 +582,20 @@ int main() {
         clShader.setMat4("projection",projection);
         clShader.setMat4("view",view);
         glBindVertexArray(transparentVAO);
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0);//???
         glBindTexture(GL_TEXTURE_2D, transparentTexture);
-        //glEnable(GL_CULL_FACE);
+       // glDisable(GL_CULL_FACE);
         for (const glm::vec3& c : clouds)
         {
             model = glm::mat4(1.0f);
             model = glm::translate(model, c);
-            //model = glm::rotate(model, (float)glfwGetTime(),glm::vec3(0.0f,1.0f,0.0f));
             model = glm::scale(model,glm::vec3(10.0f));
             clShader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
-       // glEnable(GL_CULL_FACE);
 
-        stbi_set_flip_vertically_on_load(false);
+        //stbi_set_flip_vertically_on_load(false);
         // draw skybox as last
         glDepthFunc(GL_LEQUAL);
         skyboxShader.use();
@@ -641,9 +615,9 @@ int main() {
 
 
 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         //load ping-pong
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         bool horizontal = true, first_iteration = true;
         unsigned int amount = 10;
         bloomShader.use();
@@ -660,8 +634,9 @@ int main() {
                 first_iteration = false;
         }
 
-        // load hdr and bloom
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // load hdr and bloom
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         hdrShader.use();
         glActiveTexture(GL_TEXTURE0);
@@ -683,28 +658,20 @@ int main() {
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
-      /*  skyboxShader.use();
-        glDepthMask(GL_FALSE);
-        glDepthFunc(GL_LEQUAL);
-        glBindVertexArray(cubemapVAO);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
-*/
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-    glDeleteVertexArrays(1, &skyboxVAO);
-    glDeleteBuffers(1, &skyboxVAO);
 
     glDeleteVertexArrays(1, &boxVAO);
     glDeleteBuffers(1, &boxVBO);
 
     glDeleteVertexArrays(1, &transparentVAO);
     glDeleteBuffers(1, &transparentVBO);
+
+    glDeleteVertexArrays(1, &skyboxVAO);
+    glDeleteBuffers(1, &skyboxVAO);
+
 
     delete cubemapVertices;
 
